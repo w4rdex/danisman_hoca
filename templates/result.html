@@ -1,0 +1,15 @@
+<!doctype html>
+<html>
+<head>
+  <title>Önerilen Hocalar</title>
+</head>
+<body>
+  <h1>Size Uygun Hocalar</h1>
+  <ul>
+  {% for prof, score in matches %}
+    <li>{{ prof.name }} (benzerlik: {{ "%.2f"|format(score) }})</li>
+  {% endfor %}
+  </ul>
+  <a href="{{ url_for('index') }}">Tekrar Dene</a>
+</body>
+</html>
