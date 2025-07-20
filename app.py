@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from models import db, Professor
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from flask import redirect, url_for
+from flask import render_template_string
+import csv
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///danisman.db'
@@ -17,6 +20,41 @@ def load_data():
                          publications=row['publications'])
         db.session.merge(prof)
     db.session.commit()
+
+    # -- 5) Hoca Ekleme formu ve işlemi --
+@app.route('/add', methods=['GET', 'POST'])
+def add_professor():
+    if request.method == 'POST':
+        # Formdan gelen verileri al
+        new_id = int(request.form['id'])
+        new_name = request.form['name']
+        new_pubs = request.form['publications']
+        # Veritabanına ekle
+        prof = Professor(id=new_id, name=new_name, publications=new_pubs)
+        db.session.add(prof)
+        db.session.commit()
+         # --- 2) CSV dosyasına da ekle ---
+        # 'data/professors.csv' dosyasını append modunda açıp yeni satırı yazıyoruz
+        with open('data/professors.csv', mode='a', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_MINIMAL)
+            # publications alanında ; kullanıldığı için tırnaklamak yeterli
+            writer.writerow([new_id, new_name, new_pubs])
+        return redirect(url_for('index'))
+    # GET ise formu göster
+    return """
+    <h2>Yeni Hoca Ekle</h2>
+    <form method="post">
+      <label>ID:</label><input name="id"><br>
+      <label>Ad Soyad:</label><input name="name"><br>
+      <label>Yayınlar (;) ile ayır:</label><br>
+      <textarea name="publications" rows="4" cols="50"></textarea><br>
+      <button type="submit">Ekle</button>
+    </form>
+    """
+@app.route('/list')
+def list_profs():
+    profs = Professor.query.all()
+    return '<br>'.join(f"{p.id}: {p.name}" for p in profs)
 
 # ------------- TF-IDF Hesaplama (Başlangıçta) -------------
 def build_tfidf():
