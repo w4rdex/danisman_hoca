@@ -1,1 +1,0 @@
-# danisman_hoca
