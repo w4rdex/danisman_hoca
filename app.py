@@ -3,6 +3,7 @@ from models import db, Professor
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from datetime import datetime
 from flask import redirect, url_for
 from flask import render_template_string
 import csv
@@ -41,25 +42,17 @@ def add_professor():
             writer.writerow([new_id, new_name, new_pubs])
         return redirect(url_for('index'))
     # GET ise formu göster
-    return """
-    <h2>Yeni Hoca Ekle</h2>
-    <form method="post">
-      <label>ID:</label><input name="id"><br>
-      <label>Ad Soyad:</label><input name="name"><br>
-      <label>Yayınlar (;) ile ayır:</label><br>
-      <textarea name="publications" rows="4" cols="50"></textarea><br>
-      <button type="submit">Ekle</button>
-    </form>
-    """
+    return render_template('add.html', current_year=datetime.now().year)
+    
 @app.route('/list')
 def list_profs():
-    profs = Professor.query.all()
-    return '<br>'.join(f"{p.id}: {p.name}" for p in profs)
+    profs = Professor.query.all() 
+    return render_template('list.html', profs=profs, current_year=datetime.now().year)
 
 # ------------- TF-IDF Hesaplama (Başlangıçta) -------------
 def build_tfidf():
     profs = Professor.query.all()
-    texts = [p.publications for p in profs]
+    texts = [(p.publications or "") for p in profs]
     vec = TfidfVectorizer()
     tfidf_matrix = vec.fit_transform(texts)
     return vec, tfidf_matrix, profs
@@ -75,12 +68,13 @@ def match_professor(user_text, vec, tfidf_matrix, profs, top_n=3):
 # ------------- Route’lar -------------
 @app.route('/', methods=['GET', 'POST'])
 def index():
+    current_year = datetime.now().year
     if request.method == 'POST':
         proje_descr = request.form['proje']
         vec, tfidf_matrix, profs = build_tfidf()
         matches = match_professor(proje_descr, vec, tfidf_matrix, profs)
-        return render_template('result.html', matches=matches)
-    return render_template('index.html')
+        return render_template('result.html', matches=matches,current_year=current_year)
+    return render_template('index.html', current_year=current_year)
 
 if __name__ == '__main__':
     with app.app_context():

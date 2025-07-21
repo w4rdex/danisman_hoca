@@ -1,6 +1,6 @@
 import os
 import csv
-from PyPDF2 import PdfReader
+from PyPDF2 import PdfReader # type: ignore
 
 # ---------------- AYARLAR ----------------
 PUBLICATIONS_DIR = os.path.join('data', 'publications')
